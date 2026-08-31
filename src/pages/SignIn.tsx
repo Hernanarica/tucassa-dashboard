@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card'
 
 const signInSchema = z.object({
-  email: z.string().min(1, 'Ingresá tu email').email('Ingresá un email válido'),
+  email: z.email('Ingresá un email válido'),
   password: z.string().min(1, 'Ingresá tu contraseña'),
 })
 

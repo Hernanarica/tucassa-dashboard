@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 export function Home() {
   const navigate = useNavigate()
   const [email, setEmail] = useState<string | null>(null)
+  const [signOutError, setSignOutError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -22,7 +23,14 @@ export function Home() {
   }, [])
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    setSignOutError(null)
+    const { error } = await supabase.auth.signOut()
+
+    if (error) {
+      setSignOutError(error.message)
+      return
+    }
+
     void navigate('/signin', { replace: true })
   }
 
@@ -33,6 +41,7 @@ export function Home() {
       <Button variant="outline" onClick={handleSignOut}>
         Cerrar sesión
       </Button>
+      {signOutError && <p className="text-sm text-destructive">{signOutError}</p>}
     </div>
   )
 }
