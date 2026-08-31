@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "prettier-setup@hernan-claude-marketplace": true
+  }
+}
