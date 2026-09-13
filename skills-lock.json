@@ -7,6 +7,12 @@
       "skillPath": "skills/frameworks/clerk-react-router-patterns/SKILL.md",
       "computedHash": "929d5912f42a2769f81aa027294a1caec65e0ce83f1f1db47c6df6758c5952bb"
     },
+    "shadcn": {
+      "source": "shadcn-ui/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f615de216e085a84e31593ad0fa9062232adc40cd87b7c7ab2b8e49abf6500be"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
