@@ -1,3 +1,4 @@
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initAuth } from '@/stores/auth-store';
 import { StrictMode } from 'react';
@@ -12,6 +13,7 @@ createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <TooltipProvider>
             <RouterProvider router={router} />
+            <Toaster />
         </TooltipProvider>
     </StrictMode>
 );

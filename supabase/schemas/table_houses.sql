@@ -11,6 +11,7 @@ create table tucassa.table_houses (
   photo_paths text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  is_bestseller boolean not null default false,
   constraint table_houses_price_check check (price >= 0),
   constraint table_houses_bedrooms_check check (bedrooms >= 0),
   constraint table_houses_bathrooms_check check (bathrooms >= 0),
@@ -30,6 +31,7 @@ comment on column tucassa.table_houses.gallery_sqm is 'Metros cuadrados de galer
 comment on column tucassa.table_houses.photo_paths is 'Paths de fotos en el bucket house-photos.';
 comment on column tucassa.table_houses.created_at is 'Fecha de alta.';
 comment on column tucassa.table_houses.updated_at is 'Última modificación.';
+comment on column tucassa.table_houses.is_bestseller is 'Más vendida (elegida en el sitio).';
 
 create index table_houses_category_id_idx on tucassa.table_houses (category_id);
 
