@@ -3,6 +3,33 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
     tucassa: {
         Tables: {
+            table_banners: {
+                Row: {
+                    created_at: string;
+                    id: number;
+                    photo_path: string;
+                    section: string;
+                    sort_order: number;
+                    updated_at: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    id?: never;
+                    photo_path: string;
+                    section: string;
+                    sort_order?: number;
+                    updated_at?: string;
+                };
+                Update: {
+                    created_at?: string;
+                    id?: never;
+                    photo_path?: string;
+                    section?: string;
+                    sort_order?: number;
+                    updated_at?: string;
+                };
+                Relationships: [];
+            };
             table_category: {
                 Row: {
                     created_at: string;

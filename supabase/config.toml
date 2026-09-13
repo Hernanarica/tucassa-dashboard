@@ -78,6 +78,7 @@ sql_paths = [
     "./seeds/seed_houses_traditional.sql",
     "./seeds/seed_houses_minimalist.sql",
     "./seeds/seed_houses_cabin.sql",
+    "./seeds/seed_banners.sql",
 ]
 
 [db.network_restrictions]
@@ -137,6 +138,7 @@ objects_path = "./seed/house-photos"
 public = true
 file_size_limit = "10MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp"]
+objects_path = "./seed/banner-photos"
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

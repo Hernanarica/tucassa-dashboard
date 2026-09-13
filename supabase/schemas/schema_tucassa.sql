@@ -15,5 +15,5 @@ begin
 end;
 $$;
 
-comment on schema tucassa is 'Dominio del catálogo Tu Cassa: categorías y casas.';
+comment on schema tucassa is 'Dominio del catálogo Tu Cassa: categorías, casas y banners.';
 comment on function tucassa.set_updated_at() is 'Mantiene updated_at al actualizar una fila.';
