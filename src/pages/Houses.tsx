@@ -108,6 +108,30 @@ function SpecCell({ icon: Icon, children }: { icon: typeof BedDoubleIcon; childr
     );
 }
 
+function housePhotoUrl(path: string) {
+    return supabase.storage.from('house-photos').getPublicUrl(path).data.publicUrl;
+}
+
+function HouseThumb({ house }: { house: House }) {
+    const path = house.photo_paths[0];
+
+    if (!path) {
+        return (
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                <HouseIcon className="size-4" />
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={housePhotoUrl(path)}
+            alt={house.title}
+            className="size-10 shrink-0 rounded-md object-cover"
+        />
+    );
+}
+
 function formatArs(value: string | number) {
     return arsFormatter.format(Number(value));
 }
@@ -252,6 +276,7 @@ export function Houses() {
                                 <TableRow key={house.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
+                                            <HouseThumb house={house} />
                                             <span className="font-medium">{house.title}</span>
                                             {house.is_bestseller ? (
                                                 <Badge variant="secondary">

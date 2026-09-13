@@ -7,7 +7,8 @@ insert into tucassa.table_houses (
   bathrooms,
   covered_sqm,
   gallery_sqm,
-  is_bestseller
+  is_bestseller,
+  photo_paths
 )
 select
   category.id,
@@ -17,19 +18,143 @@ select
   house.bathrooms,
   house.covered_sqm,
   house.gallery_sqm,
-  house.is_bestseller
+  house.is_bestseller,
+  house.photo_paths
 from tucassa.table_category as category
 cross join (
   values
-    ('Vivienda Tradicional 1', 17980000, 2, 1, 36, 15, false),
-    ('Vivienda Tradicional 2', 18780000, 2, 1, 42, 15, false),
-    ('Vivienda Tradicional 3', 19920000, 3, 1, 52, 18, false),
-    ('Vivienda Tradicional 4', 22590000, 3, 1, 70, 25, true),
-    ('Vivienda Tradicional 5', 29860000, 4, 2, 84, 35, false),
-    ('Vivienda Tradicional 6', 29760000, 4, 2, 105, 0, false),
-    ('Vivienda Tradicional 7', 19680000, 3, 1, 57, 11, true),
-    ('Vivienda Tradicional 8', 19970000, 3, 1, 59, 19, false),
-    ('Vivienda Tradicional 9', 22890000, 3, 1, 72, 20, true)
+    (
+      'Vivienda Tradicional 1',
+      17980000,
+      2,
+      1,
+      36,
+      15,
+      false,
+      array[
+        'tradicional-1-1200.webp',
+        'tradicional-1-render-1400.webp',
+        'tradicional-1-plano-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 2',
+      18780000,
+      2,
+      1,
+      42,
+      15,
+      false,
+      array[
+        'tradicional-2-1200.webp',
+        'tradicional-2-render-1400.webp',
+        'tradicional-2-plano-1400.webp',
+        'tradicional-2-real-1-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 3',
+      19920000,
+      3,
+      1,
+      52,
+      18,
+      false,
+      array[
+        'tradicional-3-1200.webp',
+        'tradicional-3-render-1400.webp',
+        'tradicional-3-plano-1400.webp',
+        'tradicional-3-real-1-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 4',
+      22590000,
+      3,
+      1,
+      70,
+      25,
+      true,
+      array[
+        'tradicional-4-1200.webp',
+        'tradicional-4-render-1400.webp',
+        'tradicional-4-plano-1400.webp',
+        'tradicional-4-real-1-1400.webp',
+        'tradicional-4-real-2-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 5',
+      29860000,
+      4,
+      2,
+      84,
+      35,
+      false,
+      array[
+        'tradicional-5-1200.webp',
+        'tradicional-5-render-1400.webp',
+        'tradicional-5-plano-1400.webp',
+        'tradicional-5-real-1-1400.webp',
+        'tradicional-5-real-2-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 6',
+      29760000,
+      4,
+      2,
+      105,
+      0,
+      false,
+      array[
+        'tradicional-6-1200.webp',
+        'tradicional-6-render-1400.webp',
+        'tradicional-6-plano-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 7',
+      19680000,
+      3,
+      1,
+      57,
+      11,
+      true,
+      array[
+        'tradicional-7-1200.webp',
+        'tradicional-7-render-1400.webp',
+        'tradicional-7-plano-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 8',
+      19970000,
+      3,
+      1,
+      59,
+      19,
+      false,
+      array[
+        'tradicional-8-1200.webp',
+        'tradicional-8-render-1400.webp',
+        'tradicional-8-plano-1400.webp'
+      ]::text[]
+    ),
+    (
+      'Vivienda Tradicional 9',
+      22890000,
+      3,
+      1,
+      72,
+      20,
+      true,
+      array[
+        'tradicional-9-1200.webp',
+        'tradicional-9-render-1400.webp',
+        'tradicional-9-plano-1400.webp'
+      ]::text[]
+    )
 ) as house (
   title,
   price,
@@ -37,6 +162,7 @@ cross join (
   bathrooms,
   covered_sqm,
   gallery_sqm,
-  is_bestseller
+  is_bestseller,
+  photo_paths
 )
 where category.name = 'Tradicionales';
