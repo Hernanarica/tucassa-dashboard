@@ -8,6 +8,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -39,12 +40,25 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCategories, useHouses } from '@/hooks/use-houses';
 import { supabase } from '@/lib/supabase';
 import { houseFieldErrors, houseSchema, type HouseFieldErrors } from '@/lib/validations/house';
 import type { Category } from '@/types/category';
 import type { House } from '@/types/house';
-import { useEffect, useState, type FormEvent } from 'react';
+import {
+    BathIcon,
+    BedDoubleIcon,
+    HouseIcon,
+    LayoutGridIcon,
+    Maximize2Icon,
+    PencilIcon,
+    SquareIcon,
+    StarIcon,
+    Trash2Icon,
+    TreesIcon,
+} from 'lucide-react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 const arsFormatter = new Intl.NumberFormat('es-AR', {
@@ -53,14 +67,46 @@ const arsFormatter = new Intl.NumberFormat('es-AR', {
     maximumFractionDigits: 0,
 });
 
+const CATEGORY_UI = {
+    Tradicionales: { icon: HouseIcon, variant: 'outline' },
+    Minimalistas: { icon: SquareIcon, variant: 'secondary' },
+    Cabañas: { icon: TreesIcon, variant: 'default' },
+} as const;
+
 const HOUSE_FILTERS = [
-    { value: 'all', label: 'Todas' },
-    { value: 'Tradicionales', label: 'Tradicionales' },
-    { value: 'Minimalistas', label: 'Minimalistas' },
-    { value: 'Cabañas', label: 'Cabañas' },
+    { value: 'all', label: 'Todas', icon: LayoutGridIcon },
+    { value: 'Tradicionales', label: 'Tradicionales', icon: HouseIcon },
+    { value: 'Minimalistas', label: 'Minimalistas', icon: SquareIcon },
+    { value: 'Cabañas', label: 'Cabañas', icon: TreesIcon },
 ] as const;
 
 type HouseFilter = (typeof HOUSE_FILTERS)[number]['value'];
+type CategoryName = keyof typeof CATEGORY_UI;
+
+function CategoryBadge({ name }: { name: string | null | undefined }) {
+    if (!name) {
+        return '—';
+    }
+
+    const ui = name in CATEGORY_UI ? CATEGORY_UI[name as CategoryName] : null;
+    const Icon = ui?.icon;
+
+    return (
+        <Badge variant={ui?.variant ?? 'outline'}>
+            {Icon ? <Icon data-icon="inline-start" /> : null}
+            {name}
+        </Badge>
+    );
+}
+
+function SpecCell({ icon: Icon, children }: { icon: typeof BedDoubleIcon; children: ReactNode }) {
+    return (
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Icon className="size-3.5" />
+            <span className="text-foreground tabular-nums">{children}</span>
+        </div>
+    );
+}
 
 function formatArs(value: string | number) {
     return arsFormatter.format(Number(value));
@@ -149,11 +195,15 @@ export function Houses() {
                     }
                 }}
             >
-                {HOUSE_FILTERS.map((item) => (
-                    <ToggleGroupItem key={item.value} value={item.value}>
-                        {item.label}
-                    </ToggleGroupItem>
-                ))}
+                {HOUSE_FILTERS.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                        <ToggleGroupItem key={item.value} value={item.value}>
+                            <Icon data-icon="inline-start" />
+                            {item.label}
+                        </ToggleGroupItem>
+                    );
+                })}
             </ToggleGroup>
 
             {error || categoriesError ? (
@@ -183,53 +233,91 @@ export function Houses() {
             ) : null}
 
             {!isLoading && filteredHouses.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Título</TableHead>
-                            <TableHead>Categoría</TableHead>
-                            <TableHead>Precio</TableHead>
-                            <TableHead>Dorm.</TableHead>
-                            <TableHead>Baños</TableHead>
-                            <TableHead>Cubiertos</TableHead>
-                            <TableHead>Galería</TableHead>
-                            <TableHead>Más vendida</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredHouses.map((house) => (
-                            <TableRow key={house.id}>
-                                <TableCell className="font-medium">{house.title}</TableCell>
-                                <TableCell>{house.category?.name ?? '—'}</TableCell>
-                                <TableCell>{formatArs(house.price)}</TableCell>
-                                <TableCell>{house.bedrooms}</TableCell>
-                                <TableCell>{house.bathrooms}</TableCell>
-                                <TableCell>{formatSqm(house.covered_sqm)}</TableCell>
-                                <TableCell>{formatSqm(house.gallery_sqm)}</TableCell>
-                                <TableCell>{house.is_bestseller ? 'Sí' : '—'}</TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex justify-end gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => openEdit(house)}
-                                        >
-                                            Editar
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => setHouseToDelete(house)}
-                                        >
-                                            Eliminar
-                                        </Button>
-                                    </div>
-                                </TableCell>
+                <div className="overflow-hidden rounded-lg border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Título</TableHead>
+                                <TableHead>Categoría</TableHead>
+                                <TableHead>Precio</TableHead>
+                                <TableHead>Dorm.</TableHead>
+                                <TableHead>Baños</TableHead>
+                                <TableHead>Cubiertos</TableHead>
+                                <TableHead>Galería</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredHouses.map((house) => (
+                                <TableRow key={house.id}>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium">{house.title}</span>
+                                            {house.is_bestseller ? (
+                                                <Badge variant="secondary">
+                                                    <StarIcon data-icon="inline-start" />
+                                                    Más vendida
+                                                </Badge>
+                                            ) : null}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <CategoryBadge name={house.category?.name} />
+                                    </TableCell>
+                                    <TableCell className="tabular-nums">
+                                        {formatArs(house.price)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <SpecCell icon={BedDoubleIcon}>{house.bedrooms}</SpecCell>
+                                    </TableCell>
+                                    <TableCell>
+                                        <SpecCell icon={BathIcon}>{house.bathrooms}</SpecCell>
+                                    </TableCell>
+                                    <TableCell>
+                                        <SpecCell icon={Maximize2Icon}>
+                                            {formatSqm(house.covered_sqm)}
+                                        </SpecCell>
+                                    </TableCell>
+                                    <TableCell>
+                                        <SpecCell icon={Maximize2Icon}>
+                                            {formatSqm(house.gallery_sqm)}
+                                        </SpecCell>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon-sm"
+                                                        aria-label="Editar"
+                                                        onClick={() => openEdit(house)}
+                                                    >
+                                                        <PencilIcon />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Editar</TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon-sm"
+                                                        aria-label="Eliminar"
+                                                        onClick={() => setHouseToDelete(house)}
+                                                    >
+                                                        <Trash2Icon />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>Eliminar</TooltipContent>
+                                            </Tooltip>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             ) : null}
 
             <HouseFormDialog
