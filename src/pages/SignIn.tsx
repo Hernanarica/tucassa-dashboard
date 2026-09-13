@@ -1,10 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
-import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+import { Field } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { PasswordInput } from '@/components/ui/password-input'
 import {
   Card,
   CardContent,
@@ -12,36 +12,65 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-
-const signInSchema = z.object({
-  email: z.email('Ingresá un email válido'),
-  password: z.string().min(1, 'Ingresá tu contraseña'),
-})
+import {
+  signInAuthErrorMessage,
+  signInFieldErrors,
+  signInSchema,
+  type SignInFieldErrors,
+  type SignInValues,
+} from '@/lib/validations/sign-in'
 
 export function SignIn() {
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<SignInFieldErrors>({})
+  const [authError, setAuthError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  function validateField(field: keyof SignInValues, value: string) {
+    const result = signInSchema.shape[field].safeParse(value)
+
+    setFieldErrors((current) => ({
+      ...current,
+      [field]: result.success ? undefined : result.error.issues[0]?.message,
+    }))
+  }
+
+  function handleEmailChange(value: string) {
+    setEmail(value)
+    setAuthError(null)
+    if (fieldErrors.email) {
+      validateField('email', value)
+    }
+  }
+
+  function handlePasswordChange(value: string) {
+    setPassword(value)
+    setAuthError(null)
+    if (fieldErrors.password) {
+      validateField('password', value)
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError(null)
+    setAuthError(null)
 
     const result = signInSchema.safeParse({ email, password })
     if (!result.success) {
-      setError(result.error.issues[0].message)
+      setFieldErrors(signInFieldErrors(result.error))
       return
     }
 
+    setFieldErrors({})
     setLoading(true)
     const { error: signInError } = await supabase.auth.signInWithPassword(result.data)
     setLoading(false)
 
     if (signInError) {
-      setError(signInError.message)
+      setAuthError(signInAuthErrorMessage(signInError.message))
       return
     }
 
@@ -56,30 +85,29 @@ export function SignIn() {
           <CardDescription>Ingresá con tu email y contraseña para continuar.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+            <Field label="Email" htmlFor="email" error={fieldErrors.email}>
               <Input
-                id="email"
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                aria-invalid={Boolean(error)}
+                onChange={(event) => handleEmailChange(event.target.value)}
+                onBlur={() => validateField('email', email)}
               />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
+            </Field>
+            <Field label="Contraseña" htmlFor="password" error={fieldErrors.password}>
+              <PasswordInput
                 autoComplete="current-password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                aria-invalid={Boolean(error)}
+                onChange={(event) => handlePasswordChange(event.target.value)}
+                onBlur={() => validateField('password', password)}
               />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            </Field>
+            {authError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {authError}
+              </p>
+            ) : null}
             <Button type="submit" disabled={loading} className="mt-2 w-full">
               {loading ? 'Ingresando...' : 'Ingresar'}
             </Button>
