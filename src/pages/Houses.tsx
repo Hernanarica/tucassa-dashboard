@@ -57,6 +57,7 @@ import {
     StarIcon,
     Trash2Icon,
     TreesIcon,
+    XIcon,
 } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { toast } from 'sonner';
@@ -132,6 +133,89 @@ function HouseThumb({ house }: { house: House }) {
     );
 }
 
+const PHOTO_BUCKET = 'house-photos';
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
+type ExistingPhoto = { key: string; kind: 'existing'; path: string };
+type PendingPhoto = { key: string; kind: 'pending'; file: File; previewUrl: string };
+type GalleryItem = ExistingPhoto | PendingPhoto;
+
+function photoExtension(file: File) {
+    if (file.type === 'image/png') {
+        return 'png';
+    }
+
+    if (file.type === 'image/webp') {
+        return 'webp';
+    }
+
+    return 'jpg';
+}
+
+function revokePendingUrls(items: GalleryItem[]) {
+    for (const item of items) {
+        if (item.kind === 'pending') {
+            URL.revokeObjectURL(item.previewUrl);
+        }
+    }
+}
+
+function GalleryGrid({
+    items,
+    disabled,
+    onPromote,
+    onRemove,
+}: {
+    items: GalleryItem[];
+    disabled: boolean;
+    onPromote: (key: string) => void;
+    onRemove: (key: string) => void;
+}) {
+    if (items.length === 0) {
+        return <p className="text-sm text-muted-foreground">Todavía no hay fotos en la galería.</p>;
+    }
+
+    return (
+        <div className="grid grid-cols-3 gap-2">
+            {items.map((item, index) => {
+                const src = item.kind === 'existing' ? housePhotoUrl(item.path) : item.previewUrl;
+                const isCover = index === 0;
+
+                return (
+                    <div key={item.key} className="relative">
+                        <button
+                            type="button"
+                            disabled={disabled || isCover}
+                            className="block w-full overflow-hidden rounded-md border bg-muted disabled:opacity-100"
+                            onClick={() => onPromote(item.key)}
+                            aria-label={isCover ? 'Portada' : 'Usar como portada'}
+                        >
+                            <img src={src} alt="" className="aspect-square w-full object-cover" />
+                        </button>
+                        {isCover ? (
+                            <Badge className="absolute top-1 left-1" variant="secondary">
+                                Portada
+                            </Badge>
+                        ) : null}
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon-xs"
+                            className="absolute top-1 right-1"
+                            disabled={disabled}
+                            aria-label="Quitar foto"
+                            onClick={() => onRemove(item.key)}
+                        >
+                            <XIcon />
+                        </Button>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 function formatArs(value: string | number) {
     return arsFormatter.format(Number(value));
 }
@@ -181,17 +265,33 @@ export function Houses() {
         }
 
         setIsDeleting(true);
+        const photoPaths = houseToDelete.photo_paths;
         const { error: deleteError } = await supabase
             .from('table_houses')
             .delete()
             .eq('id', houseToDelete.id);
-        setIsDeleting(false);
 
         if (deleteError) {
+            setIsDeleting(false);
             toast.error('No se pudo eliminar la casa');
             return;
         }
 
+        if (photoPaths.length > 0) {
+            const { error: storageError } = await supabase.storage
+                .from(PHOTO_BUCKET)
+                .remove(photoPaths);
+
+            if (storageError) {
+                toast.error('Casa eliminada, pero no se pudieron borrar algunas fotos');
+                setIsDeleting(false);
+                setHouseToDelete(null);
+                await mutate();
+                return;
+            }
+        }
+
+        setIsDeleting(false);
         toast.success('Casa eliminada');
         setHouseToDelete(null);
         await mutate();
@@ -411,10 +511,13 @@ function HouseFormDialog({
     const [coveredSqm, setCoveredSqm] = useState(emptyForm.coveredSqm);
     const [gallerySqm, setGallerySqm] = useState(emptyForm.gallerySqm);
     const [isBestseller, setIsBestseller] = useState(emptyForm.isBestseller);
+    const [gallery, setGallery] = useState<GalleryItem[]>([]);
+    const [createdId, setCreatedId] = useState<number | null>(null);
+    const [droppedPaths, setDroppedPaths] = useState<string[]>([]);
     const [fieldErrors, setFieldErrors] = useState<HouseFieldErrors>({});
     const [saving, setSaving] = useState(false);
 
-    const isEditing = house !== null;
+    const isEditing = house !== null || createdId !== null;
 
     useEffect(() => {
         if (!open) {
@@ -422,6 +525,17 @@ function HouseFormDialog({
         }
 
         setFieldErrors({});
+        setCreatedId(null);
+        setDroppedPaths([]);
+        setGallery((current) => {
+            revokePendingUrls(current);
+            return (house?.photo_paths ?? []).map((path) => ({
+                key: path,
+                kind: 'existing' as const,
+                path,
+            }));
+        });
+
         if (house) {
             setCategoryId(String(house.category_id));
             setTitle(house.title);
@@ -444,6 +558,64 @@ function HouseFormDialog({
         setIsBestseller(emptyForm.isBestseller);
     }, [open, house]);
 
+    function handleAddPhotos(fileList: FileList | null) {
+        if (!fileList) {
+            return;
+        }
+
+        const accepted: PendingPhoto[] = [];
+
+        for (const file of fileList) {
+            if (!ALLOWED_PHOTO_TYPES.has(file.type) || file.size > MAX_PHOTO_BYTES) {
+                toast.error(`${file.name} no es una imagen PNG, JPEG o WebP de hasta 10 MB`);
+                continue;
+            }
+
+            accepted.push({
+                key: crypto.randomUUID(),
+                kind: 'pending',
+                file,
+                previewUrl: URL.createObjectURL(file),
+            });
+        }
+
+        if (accepted.length === 0) {
+            return;
+        }
+
+        setGallery((current) => [...current, ...accepted]);
+    }
+
+    function handlePromotePhoto(key: string) {
+        setGallery((current) => {
+            const index = current.findIndex((item) => item.key === key);
+            if (index <= 0) {
+                return current;
+            }
+
+            const next = [...current];
+            const [item] = next.splice(index, 1);
+            next.unshift(item);
+            return next;
+        });
+    }
+
+    function handleRemovePhoto(key: string) {
+        const item = gallery.find((entry) => entry.key === key);
+
+        if (!item) {
+            return;
+        }
+
+        if (item.kind === 'pending') {
+            URL.revokeObjectURL(item.previewUrl);
+        } else {
+            setDroppedPaths((paths) => [...paths, item.path]);
+        }
+
+        setGallery((current) => current.filter((entry) => entry.key !== key));
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -463,6 +635,17 @@ function HouseFormDialog({
             return;
         }
 
+        const invalidPending = gallery.some(
+            (item) =>
+                item.kind === 'pending' &&
+                (!ALLOWED_PHOTO_TYPES.has(item.file.type) || item.file.size > MAX_PHOTO_BYTES)
+        );
+
+        if (invalidPending) {
+            toast.error('Hay fotos inválidas. Usá PNG, JPEG o WebP de hasta 10 MB');
+            return;
+        }
+
         setFieldErrors({});
         setSaving(true);
 
@@ -477,30 +660,101 @@ function HouseFormDialog({
             is_bestseller: result.data.is_bestseller,
         };
 
-        const { error } = isEditing
-            ? await supabase.from('table_houses').update(payload).eq('id', house.id)
-            : await supabase.from('table_houses').insert(payload);
+        let houseId = house?.id ?? createdId;
 
-        setSaving(false);
+        if (houseId === null) {
+            const { data, error: insertError } = await supabase
+                .from('table_houses')
+                .insert(payload)
+                .select('id')
+                .single();
 
-        if (error) {
-            toast.error(isEditing ? 'No se pudo actualizar la casa' : 'No se pudo crear la casa');
+            if (insertError || !data) {
+                setSaving(false);
+                toast.error('No se pudo crear la casa');
+                return;
+            }
+
+            houseId = data.id;
+            setCreatedId(data.id);
+        } else {
+            const { error: updateError } = await supabase
+                .from('table_houses')
+                .update(payload)
+                .eq('id', houseId);
+
+            if (updateError) {
+                setSaving(false);
+                toast.error('No se pudo actualizar la casa');
+                return;
+            }
+        }
+
+        const uploaded = await Promise.all(
+            gallery.map(async (item) => {
+                if (item.kind === 'existing') {
+                    return item.path;
+                }
+
+                const path = `${houseId}/${crypto.randomUUID()}.${photoExtension(item.file)}`;
+                const { error: uploadError } = await supabase.storage
+                    .from(PHOTO_BUCKET)
+                    .upload(path, item.file, { contentType: item.file.type });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                return path;
+            })
+        ).catch(() => null);
+
+        if (!uploaded) {
+            setSaving(false);
+            toast.error('No se pudieron subir las fotos');
             return;
         }
 
-        toast.success(isEditing ? 'Casa actualizada' : 'Casa creada');
+        const { error: pathsError } = await supabase
+            .from('table_houses')
+            .update({ photo_paths: uploaded })
+            .eq('id', houseId);
+
+        if (pathsError) {
+            setSaving(false);
+            toast.error('No se pudo guardar la galería');
+            return;
+        }
+
+        if (droppedPaths.length > 0) {
+            const { error: removeError } = await supabase.storage
+                .from(PHOTO_BUCKET)
+                .remove(droppedPaths);
+
+            if (removeError) {
+                toast.error('Casa guardada, pero no se pudieron borrar algunas fotos viejas');
+                setSaving(false);
+                onOpenChange(false);
+                await onSaved();
+                return;
+            }
+        }
+
+        setSaving(false);
+        toast.success(isEditing && house !== null ? 'Casa actualizada' : 'Casa creada');
         onOpenChange(false);
         await onSaved();
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
                 <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
                     <DialogHeader>
-                        <DialogTitle>{isEditing ? 'Editar casa' : 'Nueva casa'}</DialogTitle>
+                        <DialogTitle>{house !== null ? 'Editar casa' : 'Nueva casa'}</DialogTitle>
                         <DialogDescription>
-                            Completá los datos del modelo. Las fotos se cargan después.
+                            Completá los datos del modelo. La primera foto es la portada del
+                            listado.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -584,6 +838,30 @@ function HouseFormDialog({
                                 onChange={(event) => setGallerySqm(event.target.value)}
                             />
                         </Field>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="photos">Fotos</Label>
+                        <GalleryGrid
+                            items={gallery}
+                            disabled={saving}
+                            onPromote={handlePromotePhoto}
+                            onRemove={handleRemovePhoto}
+                        />
+                        <Input
+                            id="photos"
+                            type="file"
+                            multiple
+                            accept="image/png,image/jpeg,image/webp"
+                            disabled={saving}
+                            onChange={(event) => {
+                                handleAddPhotos(event.target.files);
+                                event.target.value = '';
+                            }}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            PNG, JPEG o WebP. Hasta 10 MB. Tocá una foto para usarla de portada.
+                        </p>
                     </div>
 
                     <div className="flex items-center gap-2">
