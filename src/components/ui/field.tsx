@@ -1,41 +1,41 @@
-import * as React from "react"
+import * as React from 'react';
 
-import { Label } from "@/components/ui/label"
+import { Label } from '@/components/ui/label';
 
 type FieldControlProps = {
-  id?: string
-  "aria-invalid"?: boolean
-  "aria-describedby"?: string
-}
+    id?: string;
+    'aria-invalid'?: boolean;
+    'aria-describedby'?: string;
+};
 
 function Field({
-  label,
-  htmlFor,
-  error,
-  children,
+    label,
+    htmlFor,
+    error,
+    children,
 }: {
-  label: string
-  htmlFor: string
-  error?: string
-  children: React.ReactElement<FieldControlProps>
+    label: string;
+    htmlFor: string;
+    error?: string;
+    children: React.ReactElement<FieldControlProps>;
 }) {
-  const errorId = `${htmlFor}-error`
+    const errorId = `${htmlFor}-error`;
 
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor}>{label}</Label>
-      {React.cloneElement(children, {
-        id: htmlFor,
-        "aria-invalid": Boolean(error) || undefined,
-        "aria-describedby": error ? errorId : undefined,
-      })}
-      {error ? (
-        <p id={errorId} className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  )
+    return (
+        <div className="flex flex-col gap-1.5">
+            <Label htmlFor={htmlFor}>{label}</Label>
+            {React.cloneElement(children, {
+                id: htmlFor,
+                'aria-invalid': Boolean(error) || undefined,
+                'aria-describedby': error ? errorId : undefined,
+            })}
+            {error ? (
+                <p id={errorId} className="text-sm text-destructive" role="alert">
+                    {error}
+                </p>
+            ) : null}
+        </div>
+    );
 }
 
-export { Field }
+export { Field };

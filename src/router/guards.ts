@@ -1,26 +1,26 @@
-import { redirect } from 'react-router'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
+import { redirect } from 'react-router';
 
 export async function requireAuth() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    const {
+        data: { session },
+    } = await supabase.auth.getSession();
 
-  if (!session) {
-    throw redirect('/signin')
-  }
+    if (!session) {
+        throw redirect('/signin');
+    }
 
-  return session
+    return session;
 }
 
 export async function requireGuest() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    const {
+        data: { session },
+    } = await supabase.auth.getSession();
 
-  if (session) {
-    throw redirect('/')
-  }
+    if (session) {
+        throw redirect('/');
+    }
 
-  return null
+    return null;
 }
