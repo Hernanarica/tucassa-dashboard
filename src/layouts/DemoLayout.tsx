@@ -21,8 +21,8 @@ import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 
 const navItems = [
+    { to: '/', label: 'Casas', icon: HomeIcon },
     { to: '/banners', label: 'Banners', icon: ImageIcon },
-    { to: '/houses', label: 'Casas', icon: HomeIcon },
     { to: '/categories', label: 'Categorías', icon: TagsIcon },
 ] as const;
 

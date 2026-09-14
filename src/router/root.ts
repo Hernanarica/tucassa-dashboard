@@ -1,7 +1,6 @@
 import { DemoLayout } from '@/layouts/DemoLayout';
 import { Banners } from '@/pages/Banners';
 import { Categories } from '@/pages/Categories';
-import { Home } from '@/pages/Home';
 import { Houses } from '@/pages/Houses';
 import { SignIn } from '@/pages/SignIn';
 import { createBrowserRouter, redirect } from 'react-router';
@@ -20,9 +19,9 @@ export const routes = [
         Component: DemoLayout,
         ErrorBoundary: RouteError,
         children: [
-            { index: true, Component: Home },
+            { index: true, Component: Houses },
             { path: 'banners', Component: Banners },
-            { path: 'houses', Component: Houses },
+            { path: 'houses', loader: () => redirect('/') },
             { path: 'categories', Component: Categories },
         ],
     },
