@@ -64,6 +64,7 @@ schema_paths = [
     "./schemas/schema_tucassa.sql",
     "./schemas/table_category.sql",
     "./schemas/table_houses.sql",
+    "./schemas/table_banners.sql",
     "./schemas/storage_buckets.sql",
 ]
 

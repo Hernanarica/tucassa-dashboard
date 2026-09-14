@@ -43,7 +43,7 @@ alter table tucassa.table_banners enable row level security;
 create policy table_banners_select
 on tucassa.table_banners
 for select
-to authenticated
+to anon, authenticated
 using (true);
 
 create policy table_banners_insert
@@ -65,5 +65,6 @@ for delete
 to authenticated
 using (true);
 
+grant select on tucassa.table_banners to anon;
 grant select, insert, update, delete on tucassa.table_banners to authenticated, service_role;
 grant usage, select on sequence tucassa.table_banners_id_seq to authenticated, service_role;

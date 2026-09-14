@@ -23,7 +23,7 @@ alter table tucassa.table_category enable row level security;
 create policy table_category_select
 on tucassa.table_category
 for select
-to authenticated
+to anon, authenticated
 using (true);
 
 -- Dashboard admin: todos los autenticados pueden escribir (CMS de un solo tenant).
@@ -46,5 +46,6 @@ for delete
 to authenticated
 using (true);
 
+grant select on tucassa.table_category to anon;
 grant select, insert, update, delete on tucassa.table_category to authenticated, service_role;
 grant usage, select on sequence tucassa.table_category_id_seq to authenticated, service_role;
