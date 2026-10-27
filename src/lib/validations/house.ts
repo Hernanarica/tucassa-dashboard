@@ -6,6 +6,7 @@ export const houseSchema = z.object({
         .int('Elegí una categoría')
         .positive('Elegí una categoría'),
     title: z.string().trim().min(1, 'Ingresá el título'),
+    price_label: z.string().trim().max(40, 'La etiqueta no puede superar los 40 caracteres'),
     price: z.coerce
         .number({ error: 'Ingresá el precio' })
         .min(0, 'El precio no puede ser negativo'),
@@ -31,6 +32,7 @@ export type HouseValues = z.infer<typeof houseSchema>;
 export type HouseFieldErrors = {
     category_id?: string;
     title?: string;
+    price_label?: string;
     price?: string;
     bedrooms?: string;
     bathrooms?: string;
@@ -45,6 +47,7 @@ export function houseFieldErrors(error: z.ZodError<HouseValues>): HouseFieldErro
     return {
         category_id: fieldErrors.category_id?.[0],
         title: fieldErrors.title?.[0],
+        price_label: fieldErrors.price_label?.[0],
         price: fieldErrors.price?.[0],
         bedrooms: fieldErrors.bedrooms?.[0],
         bathrooms: fieldErrors.bathrooms?.[0],

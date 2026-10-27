@@ -4,6 +4,7 @@ create table tucassa.table_houses (
   category_id bigint not null references tucassa.table_category (id),
   title text not null,
   price numeric(12, 2) not null,
+  price_label text not null default 'Desde',
   bedrooms integer not null,
   bathrooms integer not null,
   covered_sqm numeric(8, 2) not null,
@@ -24,6 +25,7 @@ comment on column tucassa.table_houses.id is 'Identificador interno.';
 comment on column tucassa.table_houses.category_id is 'Categoría a la que pertenece la casa.';
 comment on column tucassa.table_houses.title is 'Título o nombre del modelo.';
 comment on column tucassa.table_houses.price is 'Precio de lista.';
+comment on column tucassa.table_houses.price_label is 'Etiqueta que se muestra sobre el precio en el sitio.';
 comment on column tucassa.table_houses.bedrooms is 'Cantidad de dormitorios.';
 comment on column tucassa.table_houses.bathrooms is 'Cantidad de baños.';
 comment on column tucassa.table_houses.covered_sqm is 'Metros cuadrados cubiertos.';
