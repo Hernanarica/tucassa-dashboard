@@ -227,6 +227,7 @@ function formatSqm(value: string | number) {
 const emptyForm = {
     categoryId: '',
     title: '',
+    priceLabel: 'Desde',
     price: '',
     bedrooms: '',
     bathrooms: '',
@@ -505,6 +506,7 @@ function HouseFormDialog({
 }) {
     const [categoryId, setCategoryId] = useState(emptyForm.categoryId);
     const [title, setTitle] = useState(emptyForm.title);
+    const [priceLabel, setPriceLabel] = useState(emptyForm.priceLabel);
     const [price, setPrice] = useState(emptyForm.price);
     const [bedrooms, setBedrooms] = useState(emptyForm.bedrooms);
     const [bathrooms, setBathrooms] = useState(emptyForm.bathrooms);
@@ -539,6 +541,7 @@ function HouseFormDialog({
         if (house) {
             setCategoryId(String(house.category_id));
             setTitle(house.title);
+            setPriceLabel(house.price_label);
             setPrice(String(house.price));
             setBedrooms(String(house.bedrooms));
             setBathrooms(String(house.bathrooms));
@@ -550,6 +553,7 @@ function HouseFormDialog({
 
         setCategoryId(emptyForm.categoryId);
         setTitle(emptyForm.title);
+        setPriceLabel(emptyForm.priceLabel);
         setPrice(emptyForm.price);
         setBedrooms(emptyForm.bedrooms);
         setBathrooms(emptyForm.bathrooms);
@@ -622,6 +626,7 @@ function HouseFormDialog({
         const result = houseSchema.safeParse({
             category_id: categoryId,
             title,
+            price_label: priceLabel,
             price,
             bedrooms,
             bathrooms,
@@ -652,6 +657,7 @@ function HouseFormDialog({
         const payload = {
             category_id: result.data.category_id,
             title: result.data.title,
+            price_label: result.data.price_label,
             price: result.data.price,
             bedrooms: result.data.bedrooms,
             bathrooms: result.data.bathrooms,
@@ -782,6 +788,25 @@ function HouseFormDialog({
                     <Field label="Título" htmlFor="title" error={fieldErrors.title}>
                         <Input value={title} onChange={(event) => setTitle(event.target.value)} />
                     </Field>
+
+                    <div className="grid gap-1.5">
+                        <Field
+                            label="Etiqueta sobre el precio"
+                            htmlFor="price_label"
+                            error={fieldErrors.price_label}
+                        >
+                            <Input
+                                value={priceLabel}
+                                maxLength={40}
+                                onChange={(event) => setPriceLabel(event.target.value)}
+                            />
+                        </Field>
+                        {fieldErrors.price_label ? null : (
+                            <p className="text-xs text-muted-foreground">
+                                En el sitio se muestra en mayúsculas.
+                            </p>
+                        )}
+                    </div>
 
                     <Field label="Precio (ARS)" htmlFor="price" error={fieldErrors.price}>
                         <Input
